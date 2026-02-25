@@ -1,0 +1,173 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  font-family: 'Space Mono', monospace;
+  background: #9ca8b4;
+  color: #fff;
+}
+
+/* Loading Screen */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #9ca8b4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+#loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#loader-text {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.2rem;
+  color: #fff;
+  letter-spacing: 4px;
+  animation: loaderPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loaderPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* WebGL Container */
+#webgl {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+#webgl canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Scroll Spacer — gives us scroll distance to map to camera rotation */
+#scroll-spacer {
+  height: 500vh;
+  pointer-events: none;
+}
+
+/* UI Overlay */
+#ui-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  padding: 40px 48px;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+#ui-overlay.visible {
+  opacity: 1;
+}
+
+#ui-overlay * {
+  pointer-events: auto;
+}
+
+/* Top Left */
+#ui-top-left {
+  position: absolute;
+  top: 40px;
+  left: 48px;
+}
+
+.logo {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.meta {
+  font-size: 0.72rem;
+  line-height: 1.6;
+  opacity: 0.85;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+}
+
+/* Top Right */
+#ui-top-right {
+  position: absolute;
+  top: 40px;
+  right: 48px;
+  text-align: right;
+  max-width: 280px;
+}
+
+.section-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+.manifesto {
+  font-size: 0.78rem;
+  line-height: 1.7;
+  opacity: 0.9;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+}
+
+/* Bottom Left */
+#ui-bottom-left {
+  position: absolute;
+  bottom: 40px;
+  left: 48px;
+}
+
+.scroll-hint {
+  font-size: 0.72rem;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  opacity: 0.85;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+}
+
+#sound-toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+  opacity: 0.85;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+  transition: opacity 0.3s;
+}
+
+#sound-toggle:hover {
+  opacity: 1;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  #ui-overlay {
+    padding: 24px;
+  }
+  #ui-top-left { top: 24px; left: 24px; }
+  #ui-top-right { top: 24px; right: 24px; max-width: 180px; }
+  #ui-bottom-left { bottom: 24px; left: 24px; }
+  .logo { font-size: 1.6rem; letter-spacing: 4px; }
+  .manifesto { font-size: 0.68rem; }
+  .section-label { font-size: 0.7rem; }
+}

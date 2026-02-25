@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IGLOO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loader">
+    <div id="loader-text">--==+==--=</div>
+  </div>
+
+  <!-- WebGL Canvas -->
+  <div id="webgl"></div>
+
+  <!-- Scroll spacer (hijacked scroll) -->
+  <div id="scroll-spacer"></div>
+
+  <!-- UI Overlay -->
+  <div id="ui-overlay">
+    <div id="ui-top-left">
+      <h1 class="logo">IGLOO</h1>
+      <p class="meta">// Copyright &copy; 2026</p>
+      <p class="meta">Igloo, Inc.<br/>All Rights Reserved.</p>
+    </div>
+
+    <div id="ui-top-right">
+      <p class="section-label">////// Manifesto</p>
+      <p class="manifesto">Our mission is to create the largest onchain community, driving the consumer crypto revolution.</p>
+    </div>
+
+    <div id="ui-bottom-left">
+      <p class="scroll-hint">Scroll down to<br/>discover.</p>
+      <button id="sound-toggle">
+        <span id="sound-icon">🔊</span> Sound: <span id="sound-state">Off</span>
+      </button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
