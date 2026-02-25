@@ -78,13 +78,14 @@ export function createScene(container) {
   scene.add(interiorFill);
 
   // Visible glow core inside (small bright sphere)
+  // Small glow core — only visible through entrance and gaps
   const glowCoreMat = new THREE.MeshBasicMaterial({
-    color: 0xeef4ff,
+    color: 0xdde8ff,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.15,
   });
-  const glowCore = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), glowCoreMat);
-  glowCore.position.y = 1.0;
+  const glowCore = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 8), glowCoreMat);
+  glowCore.position.y = 0.8;
   scene.add(glowCore);
 
   // Entrance spill
@@ -355,10 +356,11 @@ export function createScene(container) {
           target = 1;
         } else if (hovered) {
           const dist = block.userData.originalPosition.distanceTo(hovered.userData.originalPosition);
-          if (dist < 2.0) target = 0.6 * (1 - dist / 2.0);
+          // Only affect very close neighbors (within ~1 block width)
+          if (dist < 0.8) target = 0.4 * (1 - dist / 0.8);
         }
 
-        block.userData.hoverAmount += (target - block.userData.hoverAmount) * 0.1;
+        block.userData.hoverAmount += (target - block.userData.hoverAmount) * 0.12;
         const h = block.userData.hoverAmount;
 
         if (h > 0.005) {
@@ -374,12 +376,12 @@ export function createScene(container) {
           block.rotation.z = block.userData.originalRotation.z + h * 0.1 * Math.cos(elapsed * 0.8 + block.id);
 
           // Scale
-          const s = 1 + h * 0.12;
+          const s = 1 + h * 0.1;
           block.scale.copy(block.userData.originalScale).multiplyScalar(s);
 
-          // Edge glow — bright white/blue
+          // Edge glow — only on hovered block, subtle on neighbors
           block.material.emissive.setRGB(0.9, 0.95, 1.0);
-          block.material.emissiveIntensity = h * 2.0;
+          block.material.emissiveIntensity = h * 1.5;
         } else {
           block.position.copy(block.userData.originalPosition);
           block.rotation.copy(block.userData.originalRotation);
