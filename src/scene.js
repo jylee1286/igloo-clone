@@ -65,29 +65,26 @@ export function createScene(container) {
   const hemiLight = new THREE.HemisphereLight(0x667788, 0x222233, 0.4);
   scene.add(hemiLight);
 
-  // ─── Interior glow — BRIGHT white, the key visual element ───
-  // The real igloo.inc has blindingly bright white interior visible through every gap
-  const interiorGlow = new THREE.PointLight(0xeef4ff, 20, 8, 1.5);
+  // ─── Interior glow — ONLY visible when blocks are displaced by hover ───
+  // NO always-on glow sphere. Light sits inside but only shows through gaps
+  // created by hover displacement.
+  const interiorGlow = new THREE.PointLight(0xeef4ff, 15, 6, 2);
   interiorGlow.position.set(0, 1.0, 0);
   scene.add(interiorGlow);
 
-  const interiorFill = new THREE.PointLight(0xddeeff, 12, 6, 1.5);
-  interiorFill.position.set(0, 1.8, 0);
-  scene.add(interiorFill);
-
-  // Bright glow core sphere — visible through gaps
+  // Glow sphere — starts invisible, fades in near hovered area
   const glowCoreMat = new THREE.MeshBasicMaterial({
     color: 0xeef4ff,
     transparent: true,
-    opacity: 0.35,
+    opacity: 0, // starts invisible
   });
-  const glowCore = new THREE.Mesh(new THREE.SphereGeometry(1.4, 16, 12), glowCoreMat);
-  glowCore.position.y = 0.9;
+  const glowCore = new THREE.Mesh(new THREE.SphereGeometry(1.8, 16, 12), glowCoreMat);
+  glowCore.position.y = 1.0;
   scene.add(glowCore);
 
-  // Entrance spill light
-  const entranceDir = new THREE.Vector3(0.85, 0, -0.53).normalize();
-  const entranceSpill = new THREE.SpotLight(0xeef4ff, 10, 10, Math.PI / 3.5, 0.4);
+  // Entrance spill — direction matches tunnel position (2.54, y, 1.59)
+  const entranceDir = new THREE.Vector3(2.54, 0, 1.59).normalize();
+  const entranceSpill = new THREE.SpotLight(0xeef4ff, 6, 8, Math.PI / 4, 0.5);
   entranceSpill.position.set(0, 0.6, 0);
   entranceSpill.target.position.copy(entranceDir.clone().multiplyScalar(5));
   entranceSpill.target.position.y = 0.2;
@@ -308,6 +305,8 @@ export function createScene(container) {
         iglooGroup.position.set(-center.x, -box.min.y, -center.z);
 
         let blockIdx = 0;
+        const isTunnel = (name) => name && (name.includes('tunnel') || name.includes('entrance'));
+        
         iglooGroup.traverse((child) => {
           if (child.isMesh) {
             const mat = createSnowBlockMaterial();
@@ -315,13 +314,17 @@ export function createScene(container) {
             child.castShadow = true;
             child.receiveShadow = true;
 
-            // SHRINK each block to create visible gaps for light to shine through
-            child.scale.multiplyScalar(0.88);
+            if (isTunnel(child.name)) {
+              // Break tunnel into "fake blocks" by leaving as-is but marking it
+              child.userData.isTunnel = true;
+            }
 
-            // Add slight random irregularity
-            child.scale.x *= 0.95 + Math.random() * 0.1;
-            child.scale.y *= 0.93 + Math.random() * 0.14;
-            child.scale.z *= 0.95 + Math.random() * 0.1;
+            // Gentle shrink for gaps — preserve dome structure
+            child.scale.multiplyScalar(0.93);
+
+            // Very subtle irregularity (doesn't break shape)
+            child.scale.x *= 0.98 + Math.random() * 0.04;
+            child.scale.z *= 0.98 + Math.random() * 0.04;
 
             child.userData.originalPosition = child.position.clone();
             child.userData.originalScale = child.scale.clone();
@@ -388,17 +391,24 @@ export function createScene(container) {
     }
     snowPos.needsUpdate = true;
 
-    // Interior glow pulse
-    const pulse = Math.sin(elapsed * 1.8) * 2 + Math.sin(elapsed * 3.2) * 1;
-    interiorGlow.intensity = 20 + pulse;
-    interiorFill.intensity = 12 + pulse * 0.5;
-    glowCoreMat.opacity = 0.5 + Math.sin(elapsed * 1.2) * 0.1;
+    // Interior glow — base level is low, brightens when hovering
+    interiorGlow.intensity = 3 + Math.sin(elapsed * 1.8) * 0.5;
 
     // Hover
     if (iglooBlocks.length > 0) {
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(iglooBlocks, false);
       const hovered = intersects.length > 0 ? intersects[0].object : null;
+
+      // Dynamically control glow based on hover state
+      if (hovered) {
+        // Brighten interior only when hovering
+        interiorGlow.intensity = 20 + Math.sin(elapsed * 2) * 2;
+        glowCoreMat.opacity = Math.min(glowCoreMat.opacity + 0.03, 0.5);
+      } else {
+        interiorGlow.intensity = 3;
+        glowCoreMat.opacity = Math.max(glowCoreMat.opacity - 0.02, 0);
+      }
 
       for (const block of iglooBlocks) {
         let target = 0;
