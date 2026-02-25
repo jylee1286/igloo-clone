@@ -12,13 +12,16 @@
 <body>
   <!-- Loading Screen -->
   <div id="loader">
-    <div id="loader-text">--==+==--=</div>
+    <div id="loader-inner">
+      <div id="loader-text">--==+==--=</div>
+      <div id="loader-bar"><div id="loader-fill"></div></div>
+    </div>
   </div>
 
   <!-- WebGL Canvas -->
   <div id="webgl"></div>
 
-  <!-- Scroll spacer (hijacked scroll) -->
+  <!-- Scroll spacer -->
   <div id="scroll-spacer"></div>
 
   <!-- UI Overlay -->
@@ -35,10 +38,16 @@
     </div>
 
     <div id="ui-bottom-left">
-      <p class="scroll-hint">Scroll down to<br/>discover.</p>
+      <p class="scroll-hint">Scroll to explore</p>
       <button id="sound-toggle">
-        <span id="sound-icon">🔊</span> Sound: <span id="sound-state">Off</span>
+        <span id="sound-icon">&#9834;</span> Sound: <span id="sound-state">Off</span>
       </button>
+    </div>
+
+    <div id="ui-bottom-right">
+      <a href="#" class="nav-link">Twitter</a>
+      <a href="#" class="nav-link">Discord</a>
+      <a href="#" class="nav-link">About</a>
     </div>
   </div>
 
