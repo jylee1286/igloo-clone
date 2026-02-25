@@ -9,7 +9,7 @@ html, body {
   min-height: 100%;
   overflow-x: hidden;
   font-family: 'Space Mono', monospace;
-  background: #939da7;
+  background: #2a2e33;
   color: #fff;
   -webkit-font-smoothing: antialiased;
 }
@@ -19,7 +19,7 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: #1a1d21;
+  background: #2a2e33;
   display: flex;
   align-items: center;
   justify-content: center;

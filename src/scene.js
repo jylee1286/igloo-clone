@@ -5,23 +5,23 @@ import { EffectComposer, RenderPass, BloomEffect, EffectPass, SMAAEffect, ToneMa
 export function createScene(container) {
   // ─── Renderer ───
   const renderer = new THREE.WebGLRenderer({
-    antialias: false, // SMAA handles this
+    antialias: false,
     alpha: false,
     powerPreference: 'high-performance',
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.toneMapping = THREE.NoToneMapping; // postprocessing handles it
+  renderer.toneMapping = THREE.NoToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
-  // ─── Scene ───
+  // ─── Scene — dark moody atmosphere like igloo.inc ───
   const scene = new THREE.Scene();
-  const bgColor = new THREE.Color(0.58, 0.63, 0.68);
+  const bgColor = new THREE.Color(0x2a2e33);
   scene.background = bgColor;
-  scene.fog = new THREE.FogExp2(bgColor, 0.025);
+  scene.fog = new THREE.FogExp2(bgColor, 0.035);
 
   // ─── Camera ───
   const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -30,90 +30,89 @@ export function createScene(container) {
 
   // ─── Post-Processing ───
   const composer = new EffectComposer(renderer);
-  const renderPass = new RenderPass(scene, camera);
-  composer.addPass(renderPass);
+  composer.addPass(new RenderPass(scene, camera));
 
   const bloom = new BloomEffect({
-    intensity: 0.8,
-    luminanceThreshold: 0.5,
-    luminanceSmoothing: 0.3,
+    intensity: 0.7,
+    luminanceThreshold: 0.6,
+    luminanceSmoothing: 0.25,
     mipmapBlur: true,
   });
-
-  const vignette = new VignetteEffect({
-    offset: 0.35,
-    darkness: 0.55,
-  });
-
-  const toneMapping = new ToneMappingEffect({
-    mode: ToneMappingMode.AGX,
-  });
-
+  const vignette = new VignetteEffect({ offset: 0.3, darkness: 0.6 });
+  const toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.AGX });
   const smaa = new SMAAEffect();
-
   composer.addPass(new EffectPass(camera, bloom, vignette, toneMapping, smaa));
 
-  // ─── Lighting ───
-  // Key light (sun — cool blue-white)
-  const sunLight = new THREE.DirectionalLight(0xd6e4f0, 3.5);
-  sunLight.position.set(6, 12, 4);
+  // ─── Lighting — dramatic, directional ───
+  // Key light (cool, from above-right)
+  const sunLight = new THREE.DirectionalLight(0xc0d4e8, 2.0);
+  sunLight.position.set(5, 10, 3);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(2048, 2048);
   sunLight.shadow.camera.near = 0.5;
-  sunLight.shadow.camera.far = 40;
-  sunLight.shadow.camera.left = -10;
-  sunLight.shadow.camera.right = 10;
-  sunLight.shadow.camera.top = 10;
-  sunLight.shadow.camera.bottom = -10;
+  sunLight.shadow.camera.far = 30;
+  sunLight.shadow.camera.left = -8;
+  sunLight.shadow.camera.right = 8;
+  sunLight.shadow.camera.top = 8;
+  sunLight.shadow.camera.bottom = -8;
   sunLight.shadow.bias = -0.001;
   scene.add(sunLight);
 
-  // Fill light (subtle warm from opposite side)
-  const fillLight = new THREE.DirectionalLight(0xffeedd, 0.8);
-  fillLight.position.set(-4, 6, -6);
+  // Very subtle fill
+  const fillLight = new THREE.DirectionalLight(0x8899aa, 0.3);
+  fillLight.position.set(-4, 4, -6);
   scene.add(fillLight);
 
-  // Rim light (back)
-  const rimLight = new THREE.DirectionalLight(0xaaccff, 1.2);
-  rimLight.position.set(-2, 8, -10);
-  scene.add(rimLight);
-
-  // Hemisphere for ambient
-  const hemiLight = new THREE.HemisphereLight(0xc0d0e0, 0x556070, 0.6);
+  // Subtle ambient
+  const hemiLight = new THREE.HemisphereLight(0x667788, 0x222233, 0.4);
   scene.add(hemiLight);
 
-  // Warm interior glow (point light inside igloo)
-  const interiorGlow = new THREE.PointLight(0xff9944, 15, 8, 2);
+  // Interior glow — bright white, visible through gaps between blocks
+  const interiorGlow = new THREE.PointLight(0xeef4ff, 15, 8, 2);
   interiorGlow.position.set(0, 0.8, 0);
   scene.add(interiorGlow);
 
-  // Entrance spill — entrance faces camera direction (atan2(-5,8) in Blender)
-  const entranceDir = new THREE.Vector3(0.85, 0, -0.53).normalize(); // from center outward
-  const entranceSpill = new THREE.SpotLight(0xffaa66, 6, 8, Math.PI / 4, 0.5);
+  // Secondary interior fill
+  const interiorFill = new THREE.PointLight(0xddeeff, 8, 5, 2);
+  interiorFill.position.set(0, 1.5, 0);
+  scene.add(interiorFill);
+
+  // Visible glow core inside (small bright sphere)
+  const glowCoreMat = new THREE.MeshBasicMaterial({
+    color: 0xeef4ff,
+    transparent: true,
+    opacity: 0.3,
+  });
+  const glowCore = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), glowCoreMat);
+  glowCore.position.y = 1.0;
+  scene.add(glowCore);
+
+  // Entrance spill
+  const entranceDir = new THREE.Vector3(0.85, 0, -0.53).normalize();
+  const entranceSpill = new THREE.SpotLight(0xeef4ff, 8, 8, Math.PI / 4, 0.5);
   entranceSpill.position.set(0, 0.6, 0);
   entranceSpill.target.position.copy(entranceDir.clone().multiplyScalar(4));
   entranceSpill.target.position.y = 0.3;
   scene.add(entranceSpill);
   scene.add(entranceSpill.target);
 
-  // ─── Ground ───
+  // ─── Ground — dark snowy terrain ───
   const groundGeo = new THREE.PlaneGeometry(120, 120, 200, 200);
   const posAttr = groundGeo.attributes.position;
   for (let i = 0; i < posAttr.count; i++) {
     const x = posAttr.getX(i);
     const y = posAttr.getY(i);
     const dist = Math.sqrt(x * x + y * y);
-    // Gentle undulation, flat near center
-    const h = dist > 6
-      ? (Math.sin(x * 0.08) * Math.cos(y * 0.06) * 1.5 + Math.sin(x * 0.15 + y * 0.12) * 0.8) * Math.min((dist - 6) / 30, 1)
+    const h = dist > 5
+      ? (Math.sin(x * 0.1) * Math.cos(y * 0.08) * 2 + Math.sin(x * 0.2 + y * 0.15) * 1.0) * Math.min((dist - 5) / 25, 1)
       : 0;
     posAttr.setZ(i, h);
   }
   groundGeo.computeVertexNormals();
 
   const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x9eaab6,
-    roughness: 0.92,
+    color: 0x4a5560,
+    roughness: 0.95,
     metalness: 0.0,
   });
   const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -122,7 +121,7 @@ export function createScene(container) {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // ─── Snow base ring (covers igloo-ground gap) ───
+  // Snow base ring
   const baseRingGeo = new THREE.TorusGeometry(3.2, 0.6, 8, 32);
   const baseRing = new THREE.Mesh(baseRingGeo, groundMat);
   baseRing.rotation.x = -Math.PI / 2;
@@ -131,117 +130,149 @@ export function createScene(container) {
   baseRing.receiveShadow = true;
   scene.add(baseRing);
 
-  // ─── Snow drift mounds ───
-  for (let i = 0; i < 12; i++) {
-    const angle = (i / 12) * Math.PI * 2 + Math.random() * 0.3;
-    const dist = 4.0 + Math.random() * 2.5;
-    const moundGeo = new THREE.SphereGeometry(0.5 + Math.random() * 0.6, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+  // Snow drift mounds
+  for (let i = 0; i < 14; i++) {
+    const angle = (i / 14) * Math.PI * 2 + Math.random() * 0.3;
+    const dist = 4.0 + Math.random() * 3;
+    const moundGeo = new THREE.SphereGeometry(0.5 + Math.random() * 0.8, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
     const mound = new THREE.Mesh(moundGeo, groundMat);
     mound.position.set(Math.cos(angle) * dist, -0.5, Math.sin(angle) * dist);
-    mound.scale.set(1.2 + Math.random() * 0.8, 0.2 + Math.random() * 0.15, 1.2 + Math.random() * 0.8);
+    mound.scale.set(1.5 + Math.random(), 0.25 + Math.random() * 0.15, 1.5 + Math.random());
     mound.receiveShadow = true;
     scene.add(mound);
   }
 
-  // ─── Mountains ───
-  const mountainMat = new THREE.MeshStandardMaterial({
-    color: 0x7a8896,
-    roughness: 0.95,
-    flatShading: true,
-  });
-  const mountains = [
-    { x: -25, z: -35, s: 15, h: 18 },
-    { x: 12, z: -45, s: 22, h: 25 },
-    { x: 35, z: -30, s: 18, h: 16 },
-    { x: -45, z: -50, s: 20, h: 22 },
-    { x: 0, z: -55, s: 28, h: 28 },
-    { x: -15, z: -25, s: 10, h: 11 },
-    { x: 25, z: -22, s: 8, h: 9 },
-  ];
-  mountains.forEach(({ x, z, s, h }) => {
-    const geo = new THREE.ConeGeometry(s, h, 5 + Math.floor(Math.random() * 3));
-    const m = new THREE.Mesh(geo, mountainMat.clone());
-    m.material.color.setHSL(0.58, 0.06, 0.44 + Math.random() * 0.08);
-    m.position.set(x, h / 2 - 2, z);
+  // ─── Mountains (360° ring, dark and rocky) ───
+  for (let i = 0; i < 24; i++) {
+    const angle = (i / 24) * Math.PI * 2 + Math.random() * 0.25;
+    const dist = 25 + Math.random() * 25;
+    const h = 10 + Math.random() * 18;
+    const s = 8 + Math.random() * 14;
+    const geo = new THREE.ConeGeometry(s, h, 5 + Math.floor(Math.random() * 4));
+    const mPos = geo.attributes.position;
+    for (let v = 0; v < mPos.count; v++) {
+      const px = mPos.getX(v), py = mPos.getY(v), pz = mPos.getZ(v);
+      const noise = (Math.sin(px * 2 + py) * Math.cos(pz * 1.5)) * 0.15 * s;
+      mPos.setX(v, px + noise);
+      mPos.setZ(v, pz + noise * 0.7);
+    }
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color().setHSL(0.58, 0.05, 0.20 + Math.random() * 0.1),
+      roughness: 0.95,
+      flatShading: true,
+    });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(Math.cos(angle) * dist, h / 2 - 3, Math.sin(angle) * dist);
     m.rotation.y = Math.random() * Math.PI;
     scene.add(m);
-  });
+  }
 
   // ─── Snow Particles ───
-  const snowCount = 2000;
+  const snowCount = 1500;
   const snowGeo = new THREE.BufferGeometry();
   const snowPositions = new Float32Array(snowCount * 3);
   const snowSizes = new Float32Array(snowCount);
   for (let i = 0; i < snowCount; i++) {
-    snowPositions[i * 3] = (Math.random() - 0.5) * 60;
-    snowPositions[i * 3 + 1] = Math.random() * 25;
-    snowPositions[i * 3 + 2] = (Math.random() - 0.5) * 60;
+    snowPositions[i * 3] = (Math.random() - 0.5) * 50;
+    snowPositions[i * 3 + 1] = Math.random() * 20;
+    snowPositions[i * 3 + 2] = (Math.random() - 0.5) * 50;
     snowSizes[i] = 0.02 + Math.random() * 0.04;
   }
   snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
   snowGeo.setAttribute('size', new THREE.BufferAttribute(snowSizes, 1));
-
   const snowMat = new THREE.PointsMaterial({
-    color: 0xffffff,
-    size: 0.06,
+    color: 0xaabbcc,
+    size: 0.05,
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.5,
     depthWrite: false,
     sizeAttenuation: true,
   });
   const snowParticles = new THREE.Points(snowGeo, snowMat);
   scene.add(snowParticles);
 
+  // ─── Snow Block Material ───
+  function createSnowBlockMaterial() {
+    // Bump texture — granular snow surface
+    const bumpCanvas = document.createElement('canvas');
+    bumpCanvas.width = 256;
+    bumpCanvas.height = 256;
+    const ctx = bumpCanvas.getContext('2d');
+    for (let y = 0; y < 256; y++) {
+      for (let x = 0; x < 256; x++) {
+        const v = Math.random() * 60 + 80;
+        ctx.fillStyle = `rgb(${v},${v},${v})`;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+    for (let i = 0; i < 200; i++) {
+      const x = Math.random() * 256, y = Math.random() * 256;
+      const r = 2 + Math.random() * 8;
+      const v = Math.random() * 50 + 100;
+      ctx.fillStyle = `rgb(${v},${v},${v})`;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const bumpTex = new THREE.CanvasTexture(bumpCanvas);
+    bumpTex.wrapS = bumpTex.wrapT = THREE.RepeatWrapping;
+    bumpTex.repeat.set(2, 2);
+
+    // Color texture — medium grey with subtle cool variation
+    const colorCanvas = document.createElement('canvas');
+    colorCanvas.width = 128;
+    colorCanvas.height = 128;
+    const cctx = colorCanvas.getContext('2d');
+    for (let y = 0; y < 128; y++) {
+      for (let x = 0; x < 128; x++) {
+        const base = 90 + Math.random() * 40;
+        const r = base - 3 + Math.random() * 6;
+        const g = base + Math.random() * 5;
+        const b = base + 5 + Math.random() * 10;
+        cctx.fillStyle = `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
+        cctx.fillRect(x, y, 1, 1);
+      }
+    }
+    const colorTex = new THREE.CanvasTexture(colorCanvas);
+    colorTex.wrapS = colorTex.wrapT = THREE.RepeatWrapping;
+    colorTex.repeat.set(2, 2);
+
+    return new THREE.MeshStandardMaterial({
+      map: colorTex,
+      roughness: 0.88,
+      metalness: 0.0,
+      bumpMap: bumpTex,
+      bumpScale: 0.2,
+      side: THREE.DoubleSide,
+    });
+  }
+
   // ─── Load Igloo Model ───
   let iglooBlocks = [];
   let iglooGroup = null;
   const loader = new GLTFLoader();
   const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-  let hoveredBlock = null;
-
-  // Custom ice material
-  function createIceMaterial() {
-    return new THREE.MeshPhysicalMaterial({
-      color: 0xb0c8d8,
-      roughness: 0.12,
-      metalness: 0.0,
-      transmission: 0.55,
-      thickness: 1.2,
-      ior: 1.31,
-      clearcoat: 0.4,
-      clearcoatRoughness: 0.08,
-      attenuationColor: new THREE.Color(0x7799bb),
-      attenuationDistance: 1.5,
-      envMapIntensity: 1.2,
-      side: THREE.DoubleSide,
-      sheen: 0.1,
-      sheenColor: new THREE.Color(0xaaddff),
-    });
-  }
+  const mouse = new THREE.Vector2(99, 99); // offscreen initially
 
   const modelPromise = new Promise((resolve) => {
     loader.load(
       '/models/igloo-blender.glb',
       (gltf) => {
         iglooGroup = gltf.scene;
-
-        // Model is already properly sized (~6 units wide, ~2.7 tall)
-        // Just center it on xz and sit on ground
         const box = new THREE.Box3().setFromObject(iglooGroup);
         const center = box.getCenter(new THREE.Vector3());
         iglooGroup.position.set(-center.x, -box.min.y, -center.z);
 
-        // Apply ice material to all blocks
-        const iceMat = createIceMaterial();
+        const snowBlockMat = createSnowBlockMaterial();
         iglooGroup.traverse((child) => {
           if (child.isMesh) {
-            child.material = iceMat.clone();
+            child.material = snowBlockMat.clone();
             child.castShadow = true;
             child.receiveShadow = true;
-            // Store original position for hover animation
             child.userData.originalPosition = child.position.clone();
             child.userData.originalScale = child.scale.clone();
+            child.userData.originalRotation = child.rotation.clone();
             child.userData.hoverAmount = 0;
             iglooBlocks.push(child);
           }
@@ -252,32 +283,7 @@ export function createScene(container) {
       },
       undefined,
       (err) => {
-        console.warn('GLB load failed, creating fallback:', err);
-        // Fallback procedural igloo
-        const group = new THREE.Group();
-        const iceMat = createIceMaterial();
-        for (let row = 0; row < 8; row++) {
-          const rowAngle = (row / 8) * (Math.PI / 2);
-          const r = 2.5 * Math.cos(rowAngle);
-          const y = 2.5 * Math.sin(rowAngle) * 0.9;
-          const count = Math.max(4, Math.round(28 * (r / 2.5)));
-          for (let b = 0; b < count; b++) {
-            const a = (b / count) * Math.PI * 2 + (row % 2 ? Math.PI / count : 0);
-            const geo = new THREE.BoxGeometry(0.5, 0.25, 0.25);
-            const mesh = new THREE.Mesh(geo, iceMat.clone());
-            mesh.position.set(Math.cos(a) * r, y + 0.15, Math.sin(a) * r);
-            mesh.lookAt(0, y + 0.15, 0);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            mesh.userData.originalPosition = mesh.position.clone();
-            mesh.userData.originalScale = mesh.scale.clone();
-            mesh.userData.hoverAmount = 0;
-            iglooBlocks.push(mesh);
-            group.add(mesh);
-          }
-        }
-        scene.add(group);
-        iglooGroup = group;
+        console.warn('GLB load failed:', err);
         resolve();
       }
     );
@@ -291,17 +297,11 @@ export function createScene(container) {
   window.addEventListener('mousemove', onMouseMove, { passive: true });
 
   // ─── Camera Orbit ───
-  const cameraOrbit = {
-    angle: 0,
-    radius: 12,
-    height: 2.0,
-    lookAtY: 0.8,
-  };
+  const cameraOrbit = { angle: 0, radius: 12, height: 2.0, lookAtY: 0.8 };
 
   function updateCamera(scrollProgress) {
     cameraOrbit.angle = scrollProgress * Math.PI * 2;
-    // Slight height variation during orbit
-    const h = cameraOrbit.height + Math.sin(scrollProgress * Math.PI) * 1.2;
+    const h = cameraOrbit.height + Math.sin(scrollProgress * Math.PI) * 1.0;
     camera.position.x = Math.sin(cameraOrbit.angle) * cameraOrbit.radius;
     camera.position.z = Math.cos(cameraOrbit.angle) * cameraOrbit.radius;
     camera.position.y = h;
@@ -317,71 +317,80 @@ export function createScene(container) {
   }
   window.addEventListener('resize', onResize);
 
-  // ─── Animation Loop ───
+  // ─── Animation ───
   const clock = new THREE.Clock();
-  let animationId;
 
   function animate() {
-    animationId = requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
     const dt = clock.getDelta();
     const elapsed = clock.getElapsedTime();
 
-    // Animate snow
+    // Snow
     const snowPos = snowParticles.geometry.attributes.position;
     for (let i = 0; i < snowCount; i++) {
       let y = snowPos.getY(i);
       y -= (0.3 + snowSizes[i] * 3) * dt;
-      // Gentle horizontal drift
-      const x = snowPos.getX(i) + Math.sin(elapsed * 0.3 + i) * 0.005;
+      const x = snowPos.getX(i) + Math.sin(elapsed * 0.3 + i) * 0.004;
       const z = snowPos.getZ(i) + Math.cos(elapsed * 0.2 + i * 0.5) * 0.003;
-      if (y < -0.5) y = 20 + Math.random() * 5;
+      if (y < -0.5) y = 18 + Math.random() * 4;
       snowPos.setXYZ(i, x, y, z);
     }
     snowPos.needsUpdate = true;
 
     // Interior glow flicker
-    interiorGlow.intensity = 8 + Math.sin(elapsed * 2.5) * 1.5 + Math.sin(elapsed * 4.1) * 0.8;
+    const flicker = Math.sin(elapsed * 2.0) * 2 + Math.sin(elapsed * 3.7) * 1;
+    interiorGlow.intensity = 15 + flicker;
+    interiorFill.intensity = 8 + flicker * 0.5;
+    glowCoreMat.opacity = 0.25 + Math.sin(elapsed * 1.5) * 0.08;
 
-    // Hover raycasting
+    // Hover — dramatic block displacement like igloo.inc
     if (iglooBlocks.length > 0) {
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(iglooBlocks, false);
-      const newHovered = intersects.length > 0 ? intersects[0].object : null;
+      const hovered = intersects.length > 0 ? intersects[0].object : null;
 
-      // Animate hover
       for (const block of iglooBlocks) {
-        const isHovered = block === newHovered;
-        const target = isHovered ? 1 : 0;
+        let target = 0;
+        if (block === hovered) {
+          target = 1;
+        } else if (hovered) {
+          const dist = block.userData.originalPosition.distanceTo(hovered.userData.originalPosition);
+          if (dist < 2.0) target = 0.6 * (1 - dist / 2.0);
+        }
+
         block.userData.hoverAmount += (target - block.userData.hoverAmount) * 0.1;
         const h = block.userData.hoverAmount;
 
-        if (h > 0.01) {
-          // Push block outward from center
+        if (h > 0.005) {
           const orig = block.userData.originalPosition;
           const dir = orig.clone().normalize();
-          block.position.copy(orig).addScaledVector(dir, h * 0.15);
-          // Slight scale up
-          const s = 1 + h * 0.08;
+
+          // Dramatic outward push + lift
+          block.position.copy(orig).addScaledVector(dir, h * 1.2);
+          block.position.y += h * 0.3;
+
+          // Rotation wobble
+          block.rotation.x = block.userData.originalRotation.x + h * 0.15 * Math.sin(elapsed + block.id);
+          block.rotation.z = block.userData.originalRotation.z + h * 0.1 * Math.cos(elapsed * 0.8 + block.id);
+
+          // Scale
+          const s = 1 + h * 0.12;
           block.scale.copy(block.userData.originalScale).multiplyScalar(s);
-          // Glow — increase emissive
-          if (block.material.emissive) {
-            block.material.emissive.setHSL(0.55, 0.3, h * 0.15);
-            block.material.emissiveIntensity = h * 0.5;
-          }
+
+          // Edge glow — bright white/blue
+          block.material.emissive.setRGB(0.9, 0.95, 1.0);
+          block.material.emissiveIntensity = h * 2.0;
         } else {
           block.position.copy(block.userData.originalPosition);
+          block.rotation.copy(block.userData.originalRotation);
           block.scale.copy(block.userData.originalScale);
-          if (block.material.emissive) {
-            block.material.emissive.setHSL(0, 0, 0);
-            block.material.emissiveIntensity = 0;
-          }
+          block.material.emissive.setRGB(0, 0, 0);
+          block.material.emissiveIntensity = 0;
         }
       }
-      hoveredBlock = newHovered;
-    }
 
-    // Change cursor
-    renderer.domElement.style.cursor = hoveredBlock ? 'pointer' : '';
+      renderer.domElement.style.cursor = hovered ? 'pointer' : '';
+    }
 
     composer.render();
   }
